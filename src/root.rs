@@ -24,18 +24,16 @@ pub struct Resolved {
 
 /// Resolve the tree root and git-presence for a launch context.
 pub fn resolve(ctx: &LaunchContext) -> Resolved {
-    match git_output(&ctx.cwd, &["rev-parse", "--show-toplevel"]) {
-        Some(toplevel) => {
-            let root = PathBuf::from(toplevel);
-            Resolved {
-                is_git_repo: true,
-                repo_root: Some(root.clone()),
-                is_worktree: is_linked_worktree(&ctx.cwd),
-                base_branch: ctx.base_branch.clone(),
-                root,
-            }
-        }
-        // Not a git repo (or git unavailable): a plain browser rooted at the cwd (AC-2, AC-26).
+    match trusted_toplevel(&ctx.cwd) {
+        Some(root) => Resolved {
+            is_git_repo: true,
+            repo_root: Some(root.clone()),
+            is_worktree: is_linked_worktree(&ctx.cwd),
+            base_branch: ctx.base_branch.clone(),
+            root,
+        },
+        // Not a git repo, git unavailable, or a toplevel that is not the opened tree:
+        // a plain browser rooted at the cwd (AC-2, AC-26).
         None => Resolved {
             root: ctx.cwd.clone(),
             is_git_repo: false,
@@ -46,7 +44,61 @@ pub fn resolve(ctx: &LaunchContext) -> Resolved {
     }
 }
 
-/// Run a read-only `git` query in `dir`; `Some(trimmed stdout)` on success, else `None`.
+/// Git's toplevel, only when it is the directory that actually holds the `.git` entry git
+/// discovered from `cwd`.
+///
+/// `core.worktree` in an untrusted repo config can make `rev-parse --show-toplevel` name a
+/// different directory than the one the user opened. The filesystem fact is the nearest
+/// ancestor of `cwd` whose `.git` entry resolves to the git dir git itself reports; git's
+/// toplevel is accepted only when the two canonical paths are the same. A mismatch degrades to
+/// a non-repo rooted at `cwd`, so later reads and git queries stay on the opened tree.
+fn trusted_toplevel(cwd: &Path) -> Option<PathBuf> {
+    let reported = PathBuf::from(git_output(cwd, &["rev-parse", "--show-toplevel"])?);
+    let git_dir = git_output(cwd, &["rev-parse", "--path-format=absolute", "--git-dir"])?;
+    let discovered = directory_owning_git_dir(cwd, Path::new(&git_dir))?;
+    let reported_canon = reported.canonicalize().ok()?;
+    // Keep git's own toplevel string when it names that same directory, so a trusted repo
+    // resolves exactly as before.
+    (reported_canon == discovered).then_some(reported)
+}
+
+/// Nearest ancestor of `start`, including `start`, whose `.git` entry resolves to `git_dir`:
+/// a `.git` directory that is `git_dir`, or a `.git` file whose `gitdir:` names it (linked
+/// worktrees, submodules). Matching git's own discovery, rather than stopping at any `.git`
+/// that exists, skips an empty or invalid `.git` that git itself walked past. Canonical.
+fn directory_owning_git_dir(start: &Path, git_dir: &Path) -> Option<PathBuf> {
+    let git_dir = git_dir.canonicalize().ok()?;
+    let mut dir = start.canonicalize().ok()?;
+    loop {
+        let entry = dir.join(".git");
+        let target = if entry.is_file() {
+            gitfile_target(&dir, &entry)
+        } else {
+            entry.canonicalize().ok()
+        };
+        if target.as_deref() == Some(git_dir.as_path()) {
+            return Some(dir);
+        }
+        if !dir.pop() {
+            return None;
+        }
+    }
+}
+
+/// The canonical git dir a `.git` file (`gitdir: <path>`) in `dir` points at. Like git, only
+/// trailing line terminators are stripped and a relative path resolves against `dir`.
+fn gitfile_target(dir: &Path, gitfile: &Path) -> Option<PathBuf> {
+    let content = std::fs::read_to_string(gitfile).ok()?;
+    let target = content
+        .strip_prefix("gitdir: ")?
+        .trim_end_matches(['\n', '\r']);
+    dir.join(target).canonicalize().ok()
+}
+
+/// Run a read-only `git` query in `dir`; `Some(stdout)` minus its line terminator on success,
+/// else `None`. Only the final `\n` is dropped, never other whitespace: a path git prints may
+/// itself end in a space or `\r`, and trimming it would compare a different directory than
+/// the one git will use (`core.worktree = "/repo "` must not pass for `/repo`).
 /// Built through the Git Service's shared [`crate::git::git_command`] so the untrusted-repo
 /// hardening (no optional index locks, neutralized `core.fsmonitor`/`core.hooksPath`, dropped
 /// repo-redirecting env so the *root* resolves against `dir`) is applied identically here and
@@ -57,7 +109,8 @@ pub fn resolve(ctx: &LaunchContext) -> Resolved {
 fn git_output(dir: &Path, args: &[&str]) -> Option<String> {
     let out = crate::git::git_command(dir, args).output().ok()?;
     if out.status.success() {
-        Some(String::from_utf8_lossy(&out.stdout).trim().to_string())
+        let stdout = String::from_utf8_lossy(&out.stdout);
+        Some(stdout.strip_suffix('\n').unwrap_or(&stdout).to_string())
     } else {
         None
     }
