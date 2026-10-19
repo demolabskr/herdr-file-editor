@@ -23,6 +23,7 @@
 //! intent/poll/render core, and tree-navigation intents.
 
 mod annotation;
+mod file_edit;
 mod finder;
 mod git_apply;
 mod help;
@@ -645,6 +646,8 @@ enum Modal {
     /// The confirm raised when an action would discard unexported annotations. Carries what to do
     /// once the user decides; the store it guards is the controller's.
     DiscardConfirm(DiscardAction),
+    /// Fork: the in-pane file editor (`e`). Owns every key until it closes.
+    FileEditor(Box<crate::file_editor::FileEditor>),
 }
 
 /// What a [`Modal::DiscardConfirm`] proceeds with once the user confirms: the two paths that
@@ -829,6 +832,8 @@ pub struct Controller {
     /// (it advances one row per event via the delta's sign), so this only affects the content pane,
     /// the finder list, and the help overlay.
     wheel_step: isize,
+    /// Fork: the in-pane editor's drawn text area (for click hit-testing), fed back per frame.
+    file_editor_text_area: Option<ratatui::layout::Rect>,
     /// The tree column's share of the width, as a percentage (the rest is the content pane).
     /// Adjustable from the keyboard since the viewer owns both columns (ADR-0002). Seeded at
     /// startup from the effective config via [`apply_tree_width`](Self::apply_tree_width).
@@ -1130,6 +1135,7 @@ impl Controller {
             changed_file_view,
             active_display: ActiveDisplay::EmptyTree(Arc::new(Text::raw(""))),
             action_notice: None,
+            file_editor_text_area: None,
             flash: None,
             annotations: AnnotationStore::new(),
             git,
@@ -1957,7 +1963,8 @@ impl Controller {
     pub fn set_preview_viewports(&mut self, viewports: PreviewViewports) -> bool {
         let redraw = self.set_content_viewport(viewports.active.0, viewports.active.1);
         self.set_pinned_viewport(viewports.pinned);
-        redraw
+        let editor_moved = self.set_file_editor_area(viewports.editor);
+        redraw || editor_moved
     }
 
     /// Receive the hit-test geometry the Presenter drew this frame (fed back from the draw
@@ -2155,6 +2162,7 @@ impl Controller {
             annotation_count: self.annotations.len(),
             annotation_overview: self.annotation_overview_view(),
             annotation_editor: self.annotation_editor_view(),
+            file_editor: self.file_editor_view(),
             discard_confirm: self.discard_confirm_view(),
             annotation_indicators: self.annotation_indicators_view(),
             // The tree's top-border title is the root directory basename; the bottom is the cached
@@ -2298,7 +2306,8 @@ impl Controller {
             | Modal::LineSelect(_)
             | Modal::Annotations(_)
             | Modal::AnnotationEditor(_)
-            | Modal::DiscardConfirm(_) => return Effects::noop(),
+            | Modal::DiscardConfirm(_)
+            | Modal::FileEditor(_) => return Effects::noop(),
             Modal::None => {}
         }
         if target_for(self.focus, intent) == ActionTarget::Rejected {
@@ -2325,6 +2334,7 @@ impl Controller {
             Intent::CycleDiffRender => self.cycle_diff_render(),
             Intent::CycleView => self.cycle_view(),
             Intent::OpenInEditor => self.open_in_editor(),
+            Intent::EditInPlace => self.edit_in_place(),
             Intent::OpenWithApp => self.open_with_app(),
             Intent::RevealInFileManager => self.reveal_in_file_manager(),
             Intent::CopyRepoPath => self.copy_path(PathKind::Repo),

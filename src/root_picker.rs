@@ -489,7 +489,7 @@ impl RootPicker {
 /// Verified against herdr 0.9.1 (`herdr plugin pane open --help`, and live popup → tab and popup →
 /// split probes: from a popup, a split with no `--target-pane` lands beside the tiled pane the popup
 /// was opened over, and `--env` reaches the popup's own process):
-/// `plugin pane open --plugin herdr-file-viewer --entrypoint file-viewer --placement split
+/// `plugin pane open --plugin herdr-file-editor --entrypoint file-viewer --placement split
 /// --direction <right|down> --focus --env HERDR_FILE_VIEWER_ROOT=<dir>`, or `--placement tab` with
 /// no `--direction`; a picked file adds `--env HERDR_FILE_VIEWER_OPEN=<file>` (absolute, under the
 /// root, which the launch open target accepts). No `--cwd`: the manifest's pane command is relative, so a foreign cwd would
@@ -508,7 +508,7 @@ pub fn open_args(target: &Target, placement: Placement) -> Result<Vec<String>, S
         "pane",
         "open",
         "--plugin",
-        "herdr-file-viewer",
+        "herdr-file-editor",
         "--entrypoint",
         "file-viewer",
         "--placement",
@@ -1193,7 +1193,7 @@ mod tests {
                 "pane",
                 "open",
                 "--plugin",
-                "herdr-file-viewer",
+                "herdr-file-editor",
                 "--entrypoint",
                 "file-viewer",
                 "--placement",
@@ -1225,7 +1225,7 @@ mod tests {
                     "pane",
                     "open",
                     "--plugin",
-                    "herdr-file-viewer",
+                    "herdr-file-editor",
                     "--entrypoint",
                     "file-viewer",
                     "--placement",
@@ -1297,7 +1297,7 @@ mod tests {
     }
 
     /// A trimmed `plugin pane open` reply, shaped like herdr 0.9.1's (`plugin_pane_opened`).
-    const OPENED_REPLY: &str = r#"{"id":"cli:plugin","result":{"plugin_pane":{"entrypoint":"file-viewer","pane":{"label":"Files","pane_id":"w39:pX","tab_id":"w39:tH"},"plugin_id":"herdr-file-viewer"},"type":"plugin_pane_opened"}}"#;
+    const OPENED_REPLY: &str = r#"{"id":"cli:plugin","result":{"plugin_pane":{"entrypoint":"file-viewer","pane":{"label":"Files","pane_id":"w39:pX","tab_id":"w39:tH"},"plugin_id":"herdr-file-editor"},"type":"plugin_pane_opened"}}"#;
 
     #[test]
     fn a_new_tab_is_renamed_files_and_a_split_is_not() {

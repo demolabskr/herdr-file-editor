@@ -253,7 +253,7 @@ fn every_keyboard_function_drives_the_viewer_and_it_exits_cleanly() {
         "v", // cycle view
         "{", // shrink the pinned-preview share
         "}", // grow the pinned-preview share
-        "e", // open-in-editor (hands off to `true`, which exits immediately)
+        "E", // open-in-editor (hands off to `true`, which exits immediately)
     ] {
         s.send(key).expect("send key");
     }

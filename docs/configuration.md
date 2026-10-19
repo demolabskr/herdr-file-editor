@@ -55,7 +55,7 @@ key (`markdown`, `diff`, `syntax`, `open`, `reveal`, `hide_dotfiles`, `show_igno
 ```toml
 # ~/.config/herdr-file-viewer/config.toml (or the herdr-provided path above)
 
-editor = "code --wait"      # command to open a file with `e` (overrides $EDITOR)
+editor = "code --wait"      # command to open a file with `E` (overrides $EDITOR)
 
 markdown = "glow -s dark -w 0 -"   # override the markdown / diff / syntax renderers
 diff = "delta"                     # (defaults: glow / delta / bat)
@@ -246,7 +246,8 @@ customized).
 | | `toggle_baseline` | `b` | Switch the diff baseline between base-branch and `HEAD` |
 | | `cycle_diff_render` | `D` | Cycle diff presentation through Delta unified, side-by-side, and plain `git diff` (side-by-side applies when the configured diff renderer is Delta) |
 | | `refresh` | `r` | Re-read git state and re-render |
-| **Open & copy** | `open_in_editor` | `e` | Hand the selected file off to an external editor |
+| **Open & copy** | `edit_in_place` | `e` | Edit the selected file in the content pane (`Ctrl+S` saves) |
+| **Open & copy** | `open_in_editor` | `E` | Hand the selected file off to an external editor |
 | | `open_with_app` | `O` | Open the selected entry with the OS default application |
 | | `reveal_in_file_manager` | `R` | Reveal the selected entry in the OS file manager |
 | | `copy_repo_path` | `y` | Copy the selected node's repo-relative path to the clipboard |

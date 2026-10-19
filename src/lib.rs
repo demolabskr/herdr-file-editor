@@ -8,6 +8,7 @@ pub mod config;
 pub mod context;
 pub mod controller;
 pub mod editor;
+pub mod file_editor;
 pub mod finder;
 pub mod focus_policy;
 pub mod fuzzy;

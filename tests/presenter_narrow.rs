@@ -54,6 +54,7 @@ fn state(focus: Focus) -> ViewState {
         annotation_count: 0,
         annotation_overview: None,
         annotation_editor: None,
+        file_editor: None,
         discard_confirm: None,
         annotation_indicators: AnnotationIndicatorsView::default(),
         root_name: "r".to_string(), // the fixture tree is rooted at /r

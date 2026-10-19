@@ -68,6 +68,7 @@ pub fn unavailable_from_pinned(intent: Intent) -> bool {
             | Intent::OpenGoToLine
             | Intent::TreeScrollRight
             | Intent::OpenInEditor
+            | Intent::EditInPlace
             | Intent::OpenWithApp
             | Intent::RevealInFileManager
             | Intent::AddAnnotation
@@ -114,6 +115,7 @@ mod tests {
             Intent::OpenGoToLine,
             Intent::TreeScrollRight,
             Intent::OpenInEditor,
+            Intent::EditInPlace,
             Intent::OpenWithApp,
             Intent::RevealInFileManager,
             Intent::AddAnnotation,

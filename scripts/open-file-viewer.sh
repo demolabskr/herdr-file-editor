@@ -35,7 +35,7 @@ open_direction() {
   local dir cfg
   dir="right"
   if [ -x "$viewer_bin" ]; then
-    cfg="${HERDR_PLUGIN_CONFIG_DIR:-$("$herdr_bin" plugin config-dir herdr-file-viewer 2>/dev/null || true)}"
+    cfg="${HERDR_PLUGIN_CONFIG_DIR:-$("$herdr_bin" plugin config-dir herdr-file-editor 2>/dev/null || true)}"
     case "$(HERDR_PLUGIN_CONFIG_DIR="$cfg" "$viewer_bin" --open-direction 2>/dev/null || true)" in
       down) dir="down" ;;
     esac
@@ -45,7 +45,7 @@ open_direction() {
 
 open_pane() {
   exec "$herdr_bin" plugin pane open \
-    --plugin herdr-file-viewer \
+    --plugin herdr-file-editor \
     --entrypoint file-viewer \
     --placement split \
     --direction "$(open_direction)" \

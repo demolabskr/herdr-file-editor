@@ -19,7 +19,7 @@ case "${1:-split}" in
 esac
 
 exec "$herdr_bin" plugin pane open \
-  --plugin herdr-file-viewer \
+  --plugin herdr-file-editor \
   --entrypoint root-picker \
   --placement popup \
   --env "HERDR_FILE_VIEWER_PICK_PLACEMENT=$placement"

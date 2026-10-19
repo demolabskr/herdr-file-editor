@@ -17,8 +17,8 @@ use crate::render::{self, Caps, Prepared, Renderers};
 use crate::view_policy::ViewMode;
 use crate::{host, input, root};
 use crossterm::event::{
-    self, DisableFocusChange, DisableMouseCapture, EnableFocusChange, EnableMouseCapture, Event,
-    KeyEventKind,
+    self, DisableBracketedPaste, DisableFocusChange, DisableMouseCapture, EnableBracketedPaste,
+    EnableFocusChange, EnableMouseCapture, Event, KeyEventKind,
 };
 use crossterm::execute;
 use crossterm::terminal::{
@@ -226,6 +226,9 @@ pub fn run(open_flag: Option<String>) -> io::Result<()> {
     // Request focus-change reporting so the viewer can refresh git state when it regains focus
     // (herdr forwards FocusGained/FocusLost to a pane that opts in). Best-effort.
     let _ = execute!(io::stdout(), EnableFocusChange);
+    // Fork: bracketed paste so a paste into the in-pane editor arrives as one event (one undo
+    // step, no per-key side effects). Outside the editor a paste event is ignored. Best-effort.
+    let _ = execute!(io::stdout(), EnableBracketedPaste);
     // ratatui's panic hook restores the terminal but doesn't know we enabled mouse capture, so
     // chain a disable in front of it — otherwise a panic would leave the host terminal stuck in
     // mouse-reporting mode.
@@ -233,11 +236,13 @@ pub fn run(open_flag: Option<String>) -> io::Result<()> {
     std::panic::set_hook(Box::new(move |info| {
         let _ = execute!(io::stdout(), DisableMouseCapture);
         let _ = execute!(io::stdout(), DisableFocusChange);
+        let _ = execute!(io::stdout(), DisableBracketedPaste);
         prev_hook(info);
     }));
     let outcome = event_loop(&mut terminal, &mut controller);
     let _ = execute!(io::stdout(), DisableMouseCapture);
     let _ = execute!(io::stdout(), DisableFocusChange);
+    let _ = execute!(io::stdout(), DisableBracketedPaste);
     ratatui::try_restore()?;
     outcome
 }
@@ -358,6 +363,16 @@ fn event_loop(terminal: &mut DefaultTerminal, controller: &mut Controller) -> io
                 // query instead of firing viewer intents (AC-7). The arm is gated on
                 // `finder_open()` so it is entirely skipped when the finder is closed, leaving
                 // the existing `input::decode` arm below to run unchanged.
+                // Fork: the in-pane editor owns every key press (and paste) while it is open, so
+                // printable keys type text instead of firing viewer intents.
+                Event::Key(key)
+                    if key.kind != KeyEventKind::Release && controller.file_editor_open() =>
+                {
+                    dirty |= controller.handle_file_editor_key(key).redraw;
+                }
+                Event::Paste(text) if controller.file_editor_open() => {
+                    dirty |= controller.handle_file_editor_paste(&text).redraw;
+                }
                 Event::Key(key) if key.kind == KeyEventKind::Press && controller.finder_open() => {
                     let fx = controller.handle_finder_key(key);
                     if apply_input_effects(terminal, &mut dirty, fx, true) {

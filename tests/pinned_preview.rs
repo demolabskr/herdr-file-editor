@@ -353,11 +353,13 @@ fn pin_ready_controller() -> (TempDir, Controller) {
     ctrl.set_preview_viewports(herdr_file_viewer::presenter::PreviewViewports {
         active: (8, 4),
         pinned: None,
+        ..Default::default()
     });
     ctrl.handle(Intent::PinPreview);
     ctrl.set_preview_viewports(herdr_file_viewer::presenter::PreviewViewports {
         active: (8, 4),
         pinned: Some((8, 4)),
+        ..Default::default()
     });
     (dir, ctrl)
 }
@@ -402,6 +404,7 @@ fn pinned_search_navigation_moves_only_the_pinned_search_and_viewport_with_wrap_
     ctrl.set_preview_viewports(PreviewViewports {
         active: (8, 4),
         pinned: Some((8, 4)),
+        ..Default::default()
     });
     ctrl.handle(Intent::ToggleFocus);
     assert_eq!(ctrl.focus(), Focus::Content);
@@ -546,6 +549,7 @@ fn close_from_pinned_focus_quits_past_a_hidden_active_search() {
     ctrl.set_preview_viewports(PreviewViewports {
         active: (0, 0),
         pinned: Some((8, 4)),
+        ..Default::default()
     });
 
     let fx = ctrl.handle(Intent::Close);
@@ -651,11 +655,13 @@ fn pinned_unavailable_actions_are_consumed_with_a_notice() {
     ctrl.set_preview_viewports(herdr_file_viewer::presenter::PreviewViewports {
         active: (8, 4),
         pinned: None,
+        ..Default::default()
     });
     ctrl.handle(Intent::PinPreview);
     ctrl.set_preview_viewports(herdr_file_viewer::presenter::PreviewViewports {
         active: (8, 4),
         pinned: Some((8, 4)),
+        ..Default::default()
     });
     ctrl.set_opener(Box::new(CountingOpener(Arc::clone(&opener_calls))));
     ctrl.handle(Intent::ToggleFocus);
@@ -816,6 +822,7 @@ fn pinned_y_copies_the_captured_root_relative_path_after_re_root() {
     ctrl.set_preview_viewports(PreviewViewports {
         active: (8, 4),
         pinned: Some((8, 4)),
+        ..Default::default()
     });
     std::fs::remove_dir_all(original_root.path()).unwrap();
 
@@ -857,6 +864,7 @@ fn pinned_capital_y_copies_a_sanitized_captured_absolute_path_after_root_removal
     ctrl.set_preview_viewports(PreviewViewports {
         active: (8, 4),
         pinned: Some((8, 4)),
+        ..Default::default()
     });
     std::fs::remove_dir_all(original_root.path()).unwrap();
 
@@ -1203,6 +1211,7 @@ fn pin_lifecycle_clones_the_settled_preview_and_toggles_the_same_identity() {
     ctrl.set_preview_viewports(PreviewViewports {
         active: (8, 4),
         pinned: Some((8, 4)),
+        ..Default::default()
     });
     ctrl.handle(Intent::ToggleFocus);
     assert_eq!(ctrl.focus(), Focus::Content);
@@ -1301,6 +1310,7 @@ fn preview_resize_intents_are_inert_when_the_pin_is_not_drawn() {
     ctrl.set_preview_viewports(PreviewViewports {
         active: (8, 4),
         pinned: None,
+        ..Default::default()
     });
     let ratio = ctrl.view_state().preview_split_pct;
     assert!(!ctrl.handle(Intent::ShrinkPreview).redraw);
@@ -1707,6 +1717,7 @@ fn changed_file_jumps_from_pinned_focus_retarget_only_the_active_preview() {
     ctrl.set_preview_viewports(PreviewViewports {
         active: (8, 4),
         pinned: Some((8, 4)),
+        ..Default::default()
     });
     ctrl.handle(Intent::ToggleFocus);
     assert_eq!(ctrl.focus(), Focus::Content);
@@ -2004,11 +2015,15 @@ fn close_all_is_inert_from_pinned_focus() {
     ctrl.set_preview_viewports(PreviewViewports {
         active: (8, 4),
         pinned: None,
+
+        ..Default::default()
     });
     ctrl.handle(Intent::PinPreview);
     ctrl.set_preview_viewports(PreviewViewports {
         active: (8, 4),
         pinned: Some((8, 4)),
+
+        ..Default::default()
     });
     ctrl.handle(Intent::ToggleFocus);
     ctrl.handle(Intent::ToggleFocus);

@@ -90,6 +90,8 @@ impl PreviewProjection {
 pub struct PreviewViewports {
     pub active: (u16, u16),
     pub pinned: Option<(u16, u16)>,
+    /// Fork: the in-pane editor's text area, when it is open.
+    pub editor: Option<Rect>,
 }
 
 /// Everything the Presenter needs to draw one frame. Built by the Session Controller from
@@ -153,6 +155,8 @@ pub struct ViewState {
     pub annotation_overview: Option<AnnotationOverviewView>,
     /// Owned add/edit annotation draw model, or `None` while that modal is closed.
     pub annotation_editor: Option<AnnotationEditorView>,
+    /// Fork: the in-pane file editor, drawn over the active content pane.
+    pub file_editor: Option<crate::file_editor::FileEditorView>,
     /// Owned discard-confirm draw model, or `None` while that modal is closed.
     pub discard_confirm: Option<DiscardConfirmView>,
     /// Owned file/source-line indicator projection for the current root and applied content.
@@ -1634,6 +1638,12 @@ pub fn draw(frame: &mut Frame, state: &ViewState) -> PreviewViewports {
         ),
         None => (0, 0),
     };
+    // Fork: the in-pane editor covers the active content pane (or the whole pane when the
+    // content column is hidden), above the preview it replaces.
+    let editor = state
+        .file_editor
+        .as_ref()
+        .map(|view| draw_file_editor(frame, layout.active.unwrap_or(frame.area()), view));
     // The worktree picker is a modal overlay: drawn last, on TOP of whatever columns are
     // visible (AC-1, AC-5), so it is never obscured by the layout beneath it.
     if let Some(picker) = &state.picker {
@@ -1659,7 +1669,162 @@ pub fn draw(frame: &mut Frame, state: &ViewState) -> PreviewViewports {
     if let Some(help) = &state.help {
         draw_help_overlay(frame, frame.area(), help);
     }
-    PreviewViewports { active, pinned }
+    PreviewViewports {
+        active,
+        pinned,
+        editor,
+    }
+}
+
+/// Draw the in-pane file editor into `area`; returns the text area (for cursor and clicks).
+fn draw_file_editor(
+    frame: &mut Frame,
+    area: Rect,
+    view: &crate::file_editor::FileEditorView,
+) -> Rect {
+    use crate::file_editor::{Confirm, char_width};
+
+    frame.render_widget(Clear, area);
+    let mut title = format!(" ✎ {} ", sanitize_control(&view.title));
+    if view.modified {
+        title.push_str("[수정됨] ");
+    }
+    let hints = Line::styled(
+        " ^S 저장 · Esc 닫기 · ^Z 되돌리기 · ^Y 다시 ",
+        Style::new().fg(Color::DarkGray),
+    )
+    .right_aligned();
+    let block = Block::bordered()
+        .title(Line::styled(
+            title,
+            Style::new().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+        ))
+        .title_bottom(hints)
+        .border_style(Style::new().fg(Color::Yellow));
+    let inner = block.inner(area);
+    frame.render_widget(block, area);
+    if inner.width < 4 || inner.height < 2 {
+        return Rect::new(inner.x, inner.y, inner.width, 0);
+    }
+
+    let digits = view.total_lines.max(1).to_string().len() as u16;
+    let gutter = (digits + 1).min(inner.width / 2);
+    let text = Rect::new(
+        inner.x + gutter,
+        inner.y,
+        inner.width - gutter,
+        inner.height - 1,
+    );
+    let status = Rect::new(inner.x, inner.y + inner.height - 1, inner.width, 1);
+
+    // Gutter + text rows. Control characters never reach the terminal: they are drawn as a
+    // reversed `?`, and tabs expand to spaces, using the same widths the cursor math uses.
+    let mut gutter_lines = Vec::with_capacity(text.height as usize);
+    let mut text_lines = Vec::with_capacity(text.height as usize);
+    for (i, line) in view.visible.iter().enumerate().take(text.height as usize) {
+        let number = view.first_line + i;
+        let style = if number == view.cursor_row {
+            Style::new().fg(Color::Yellow)
+        } else {
+            Style::new().fg(Color::DarkGray)
+        };
+        gutter_lines.push(Line::styled(
+            format!("{:>width$} ", number + 1, width = digits as usize),
+            style,
+        ));
+
+        let mut spans: Vec<Span<'static>> = Vec::new();
+        let mut plain = String::new();
+        let mut col = 0usize;
+        let end = view.left + text.width as usize;
+        for c in line.chars() {
+            let w = char_width(c, col);
+            let start = col;
+            col += w;
+            if col <= view.left {
+                continue;
+            }
+            if start >= end {
+                break;
+            }
+            if start < view.left || col > end {
+                // A wide char or tab straddling an edge: pad with spaces.
+                let visible = col.min(end) - start.max(view.left);
+                plain.push_str(&" ".repeat(visible));
+                continue;
+            }
+            if c == '\t' {
+                plain.push_str(&" ".repeat(w));
+            } else if c.is_control() {
+                if !plain.is_empty() {
+                    spans.push(Span::raw(std::mem::take(&mut plain)));
+                }
+                spans.push(Span::styled(
+                    "?",
+                    Style::new().fg(Color::Red).add_modifier(Modifier::REVERSED),
+                ));
+            } else {
+                plain.push(c);
+            }
+        }
+        if !plain.is_empty() {
+            spans.push(Span::raw(plain));
+        }
+        text_lines.push(Line::from(spans));
+    }
+    frame.render_widget(
+        Paragraph::new(gutter_lines),
+        Rect::new(inner.x, inner.y, gutter, text.height),
+    );
+    frame.render_widget(Paragraph::new(text_lines), text);
+
+    // Status row: a pending question, else a one-shot message, else the position line.
+    let status_line = if let Some(confirm) = view.confirm {
+        let prompt = match confirm {
+            Confirm::CloseUnsaved => {
+                "저장하지 않은 변경이 있습니다 — s 저장 후 닫기 · d 버리고 닫기 · Esc 계속 편집"
+            }
+            Confirm::OverwriteExternal => {
+                "디스크의 파일이 바뀌었습니다 — o 덮어쓰기 · r 다시 불러오기(내 변경 버림) · Esc 취소"
+            }
+        };
+        Line::styled(
+            prompt,
+            Style::new()
+                .fg(Color::Black)
+                .bg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
+        )
+    } else if let Some((message, error)) = &view.message {
+        let color = if *error { Color::Red } else { Color::Green };
+        Line::styled(sanitize_control(message), Style::new().fg(color))
+    } else {
+        let mut info = format!(
+            "줄 {}/{} · 칸 {} · {}",
+            view.cursor_row + 1,
+            view.total_lines,
+            view.cursor_display_col + 1,
+            if view.crlf { "CRLF" } else { "LF" }
+        );
+        if view.modified {
+            info.push_str(" · 수정됨");
+        }
+        Line::styled(info, Style::new().fg(Color::DarkGray))
+    };
+    frame.render_widget(Paragraph::new(status_line), status);
+
+    if view.confirm.is_none()
+        && view.cursor_row >= view.first_line
+        && view.cursor_row < view.first_line + text.height as usize
+        && view.cursor_display_col >= view.left
+        && view.cursor_display_col < view.left + text.width as usize
+    {
+        frame.set_cursor_position(Position {
+            x: text.x + (view.cursor_display_col - view.left) as u16,
+            y: text.y + (view.cursor_row - view.first_line) as u16,
+        });
+    }
+    text
 }
 
 /// A `Rect` of outer size `w` × `h`, centered in `area` and clamped so it never exceeds `area`.

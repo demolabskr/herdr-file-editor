@@ -63,6 +63,9 @@ pub enum Intent {
     CycleView,
     /// Hand the selected file off to an external editor (AC-19).
     OpenInEditor,
+    /// Fork addition: edit the selected file inside the content pane. The only intent that can
+    /// write a file, and only on an explicit `Ctrl+S` inside the editor.
+    EditInPlace,
     /// Open the selected entry with the OS default application (`O`). Read-only external
     /// hand-off — launches another process, never modifies the file (AC-1, AC-N1). Non-blocking
     /// (does not suspend the TUI).
@@ -180,7 +183,7 @@ pub enum Intent {
 impl Intent {
     /// Every intent variant — lets the dispatcher and tests enumerate the closed set so
     /// keyboard-completeness (AC-18) and the no-file/git-mutation invariant (AC-N3) stay checkable.
-    pub const ALL: [Intent; 46] = [
+    pub const ALL: [Intent; 47] = [
         Intent::NavUp,
         Intent::NavDown,
         Intent::PageUp,
@@ -198,6 +201,7 @@ impl Intent {
         Intent::CycleDiffRender,
         Intent::CycleView,
         Intent::OpenInEditor,
+        Intent::EditInPlace,
         Intent::OpenWithApp,
         Intent::RevealInFileManager,
         Intent::CopyRepoPath,
@@ -243,6 +247,9 @@ mod tests {
         for intent in Intent::ALL {
             let (mutates_file_or_git, may_edit_in_memory_annotations) = match intent {
                 Intent::AddAnnotation => (false, true),
+                // Fork: EditInPlace only opens the editor; the write itself is the editor's
+                // explicit Ctrl+S, never the intent.
+                Intent::EditInPlace => (false, false),
                 Intent::NavUp
                 | Intent::NavDown
                 | Intent::PageUp
@@ -327,7 +334,8 @@ mod tests {
                 Some(Intent::ToggleBaseline) => Intent::CycleDiffRender,
                 Some(Intent::CycleDiffRender) => Intent::CycleView,
                 Some(Intent::CycleView) => Intent::OpenInEditor,
-                Some(Intent::OpenInEditor) => Intent::OpenWithApp,
+                Some(Intent::OpenInEditor) => Intent::EditInPlace,
+                Some(Intent::EditInPlace) => Intent::OpenWithApp,
                 Some(Intent::OpenWithApp) => Intent::RevealInFileManager,
                 Some(Intent::RevealInFileManager) => Intent::CopyRepoPath,
                 Some(Intent::CopyRepoPath) => Intent::CopyAbsPath,

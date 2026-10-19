@@ -64,7 +64,7 @@ function Get-PaneId([string]$json) {
 # silently ignored on Windows. Empty on failure: the launch proceeds with built-in defaults.
 function Get-ConfigDir {
     try {
-        $d = (& $HerdrBin plugin config-dir herdr-file-viewer | Out-String).Trim()
+        $d = (& $HerdrBin plugin config-dir herdr-file-editor | Out-String).Trim()
         if ($d) { return Strip-Verbatim $d }
     } catch {}
     return ''

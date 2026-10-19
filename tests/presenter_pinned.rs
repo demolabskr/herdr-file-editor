@@ -52,6 +52,7 @@ fn state(pinned: PreviewProjection) -> ViewState {
         annotation_count: 0,
         annotation_overview: None,
         annotation_editor: None,
+        file_editor: None,
         discard_confirm: None,
         annotation_indicators: AnnotationIndicatorsView::default(),
         root_name: "r".into(),

@@ -26,7 +26,7 @@ viewer_bin="$script_dir/../target/release/herdr-file-viewer"
 
 open_tab() {
   exec "$herdr_bin" plugin pane open \
-    --plugin herdr-file-viewer \
+    --plugin herdr-file-editor \
     --entrypoint file-viewer \
     --placement tab \
     --focus

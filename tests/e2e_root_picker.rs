@@ -78,7 +78,7 @@ fn tab_completes_and_enter_opens_a_viewer_tab_rooted_there() {
     let argv = std::fs::read_to_string(&out).expect("herdr was called");
     let root = canon(&home.path().join("project-alpha"));
     let expected = format!(
-        "plugin\npane\nopen\n--plugin\nherdr-file-viewer\n--entrypoint\nfile-viewer\n\
+        "plugin\npane\nopen\n--plugin\nherdr-file-editor\n--entrypoint\nfile-viewer\n\
          --placement\ntab\n--focus\n--env\nHERDR_FILE_VIEWER_ROOT={}\n",
         root.display()
     );
@@ -105,7 +105,7 @@ fn default_placement_opens_a_split_in_the_configured_direction() {
 
     let argv = std::fs::read_to_string(&out).expect("herdr was called");
     let expected = format!(
-        "plugin\npane\nopen\n--plugin\nherdr-file-viewer\n--entrypoint\nfile-viewer\n\
+        "plugin\npane\nopen\n--plugin\nherdr-file-editor\n--entrypoint\nfile-viewer\n\
          --placement\nsplit\n--direction\ndown\n--focus\n--env\nHERDR_FILE_VIEWER_ROOT={}\n",
         canon(&home.path().join("beta")).display()
     );

@@ -16,13 +16,13 @@ open and toggle actions.
   [[keys.command]]
   key = "prefix+f"
   type = "plugin_action"
-  command = "herdr-file-viewer.open-file-viewer-windows"
+  command = "herdr-file-editor.open-file-viewer-windows"
   description = "open file viewer in split"
 
   [[keys.command]]
   key = "prefix+shift+f"
   type = "plugin_action"
-  command = "herdr-file-viewer.open-file-viewer-tab-windows"
+  command = "herdr-file-editor.open-file-viewer-tab-windows"
   description = "open file viewer in tab"
   ```
 - **Requires herdr's preview channel.** Windows herdr binaries ship only on herdr's pre-release

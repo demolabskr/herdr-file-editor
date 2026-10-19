@@ -31,6 +31,7 @@ impl Controller {
             Modal::LineSelect(_) => self.handle_line_select_mouse(ev),
             Modal::Help(_) => self.handle_help_mouse(ev),
             Modal::Finder(_) => self.handle_finder_mouse(ev),
+            Modal::FileEditor(_) => self.handle_file_editor_mouse(ev),
             Modal::None => self.handle_column_mouse(ev),
         }
     }

@@ -21,6 +21,7 @@ impl Controller {
     ///   that became a plain file after a commit has no row that lines up with the old offset).
     /// - Otherwise nothing is dispatched, the common case.
     pub fn handle_focus_gained(&mut self) -> Effects {
+        self.file_editor_focus_gained();
         let before = self.tree.selected().map(|n| n.path);
         self.refresh_git_state();
         let Some(node) = self.tree.selected() else {

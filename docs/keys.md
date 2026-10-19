@@ -26,7 +26,8 @@ is additive and on by default.
 | `b` | Toggle the diff baseline (base branch ⇄ `HEAD`) for `c` and normal diffs; while `d` is on, content stays working-tree |
 | `D` (Shift+`d`) | In Diff/FullDiff views, cycle diff presentation through `delta` unified, side-by-side, and plain, unstyled `git diff` text |
 | `v` | Cycle the content view mode |
-| `e` | Open the selected file in `$EDITOR` (see [Opening in an editor](#opening-in-an-editor)) |
+| `e` | Edit the selected file right in the content pane (see [Editing in the pane](#editing-in-the-pane)) |
+| `E` | Open the selected file in `$EDITOR` (see [Opening in an editor](#opening-in-an-editor)) |
 | `O` (Shift+`o`) | **Open with default app**: hand the selected file or directory to the OS default application (e.g. an image opens in the system viewer). Read-only hand-off; non-blocking (the viewer keeps running) |
 | `R` (Shift+`r`) | **Reveal in file manager**: open the OS file manager (Finder / Explorer / a Linux file manager) with the selected entry highlighted where supported, so you can drag it out (e.g. into Slack). Read-only hand-off |
 | `f` | **Go to file**: open a fuzzy finder over every file in the tree; type to filter, `↑` / `↓` move, `Enter` opens the selected file and focuses its active preview, `Esc` cancels (`←` / `→` scroll long paths) |
@@ -151,19 +152,41 @@ always scroll the tree sideways, regardless of terminal.
 
 Configure the mouse-wheel step with [`scroll_lines`](configuration.md).
 
+## Editing in the pane
+
+`e` opens the selected file in a small editor drawn over the content pane (this fork's one write
+capability). Nothing is written until you press `Ctrl+S`.
+
+| Key | Does |
+| --- | --- |
+| typing, `Enter`, `Backspace`, `Delete` | Edit text (Korean and other wide characters are fine) |
+| arrows, `Home` / `End`, `PgUp` / `PgDn` | Move the cursor (`Home` toggles first non-blank / column 1) |
+| `Ctrl+Home` / `Ctrl+End` | Jump to the start / end of the file |
+| `Tab` / `Shift+Tab` | Indent with the file's own unit (tab or spaces) / outdent |
+| `Ctrl+S` | Save |
+| `Ctrl+Z` / `Ctrl+Y` (or `Ctrl+Shift+Z`) | Undo / redo |
+| `Esc` or `Ctrl+Q` | Close (asks first when there are unsaved changes) |
+| mouse wheel / click | Scroll / place the cursor |
+
+Paste arrives as one undo step. Saving is atomic (temp file + rename, permissions kept, symlinks
+followed), keeps LF/CRLF, a UTF-8 BOM, and the final newline as they were, and refuses to silently
+overwrite a file that changed on disk since you opened it (`o` overwrite, `r` reload, `Esc` cancel).
+Binary, non-UTF-8, and files over 4 MiB are not opened here — use `E` for an external editor.
+
 ## Opening in an editor
 
-`e` opens the selected file in an external editor; the viewer suspends, runs the editor, and resumes
-when it exits. The viewer never edits a file itself. Choose the editor in one of two ways. The
+`E` (Shift+`e`) opens the selected file in an external editor; the viewer suspends, runs the editor,
+and resumes when it exits. (Upstream binds this to `e`; this fork moved it to `E` and gave `e` to the
+in-pane editor, which only writes on an explicit `Ctrl+S`.) Choose the editor in one of two ways. The
 config key is more reliable:
 
 - **Recommended: set `editor` in [config.toml](configuration.md)** (e.g. `editor = "code --wait"`,
   or `"vim"`). It takes precedence over `$EDITOR` and avoids the server-environment problem below.
   It needs no shell-rc edit or server restart.
-- **Fallback: `$EDITOR`.** With no `editor` configured, `e` uses the `$EDITOR` environment variable
+- **Fallback: `$EDITOR`.** With no `editor` configured, `E` uses the `$EDITOR` environment variable
   (e.g. `vim`, or `"code --wait"` for editors that fork). Zero config if it's already set.
 
-On Linux and macOS, if `e` says "no editor configured," neither source is set (Windows falls back
+On Linux and macOS, if `E` says "no editor configured," neither source is set (Windows falls back
 to Notepad): add `editor` to your config (simplest),
 or export `$EDITOR` where the herdr server can see it (expand below).
 
@@ -204,6 +227,6 @@ that doesn't source your shell startup files), the viewer won't see it. Setting 
    ```
 
 3. **Verify:** open any shell pane *inside* herdr and run `echo $EDITOR`. Once that prints your
-   editor (it was empty before), `e` will open it.
+   editor (it was empty before), `E` will open it.
 
 </details>

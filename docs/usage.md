@@ -260,7 +260,7 @@ and active preview retain the no-pin layout, the hidden pin persists, and the ac
 `Pinned: <path> — widen to view` until there is room for both **40-column floor** previews. `Tab`
 then visits only the visible tree and active preview.
 
-The reference is display-only. Actions that need the live selection, including `Enter`, `:`, `e`,
+The reference is display-only. Actions that need the live selection, including `Enter`, `:`, `e`, `E`,
 `L`, `O`, `R`, `a`, `A`, `v`, `D`, `w`, and `Z`, are **unavailable from the pinned preview** and
 show a short notice; `Tab` to the active preview or tree to use them. This keeps a frozen reference
 from silently acting on a newer tree selection.

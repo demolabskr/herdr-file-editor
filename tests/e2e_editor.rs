@@ -54,7 +54,7 @@ fn open_in_editor_invokes_the_editor_on_the_selected_file_without_modifying_it()
     s.expect("edit.txt").expect("tree should list the file");
 
     // The selected file (cursor 0) is edit.txt; hand it off to the editor.
-    s.send("e").expect("send open-in-editor");
+    s.send("E").expect("send open-in-editor");
 
     // The hand-off is synchronous (the viewer waits for the editor), so the record appears
     // shortly after; poll the filesystem for the recorded *content* (not mere existence — the
@@ -113,7 +113,7 @@ fn a_missing_editor_is_a_non_fatal_notice_not_a_crash() {
     s.set_expect_timeout(Some(Duration::from_secs(15)));
 
     s.expect("edit.txt").expect("tree should list the file");
-    s.send("e")
+    s.send("E")
         .expect("send open-in-editor with no editor configured");
     // The file must still be intact, and the viewer must still close cleanly.
     s.send("q").expect("send close");

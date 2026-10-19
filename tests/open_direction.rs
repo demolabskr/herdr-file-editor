@@ -185,8 +185,8 @@ exit 0
             calls.lines().collect::<Vec<_>>(),
             [
                 "pane list",
-                "plugin config-dir herdr-file-viewer",
-                "plugin pane open --plugin herdr-file-viewer --entrypoint file-viewer --placement split --direction down --focus",
+                "plugin config-dir herdr-file-editor",
+                "plugin pane open --plugin herdr-file-editor --entrypoint file-viewer --placement split --direction down --focus",
             ]
         );
     }
@@ -291,7 +291,7 @@ exit /b 0
         assert!(
             calls
                 .lines()
-                .any(|line| line == "plugin config-dir herdr-file-viewer"),
+                .any(|line| line == "plugin config-dir herdr-file-editor"),
             "launcher must discover the plugin config directory:\n{calls}"
         );
         let split = calls

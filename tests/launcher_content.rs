@@ -90,7 +90,7 @@ fn windows_launchers_pass_the_plugin_config_dir() {
     for name in ["open-file-viewer.ps1", "open-file-viewer-tab.ps1"] {
         let s = read_script(name);
         assert!(
-            s.contains("plugin config-dir herdr-file-viewer"),
+            s.contains("plugin config-dir herdr-file-editor"),
             "{name} must ask herdr for the plugin config directory"
         );
         assert!(
@@ -164,7 +164,7 @@ fn root_picker_launcher_maps_its_argument_to_the_popup_placement() {
     // HERDR_FILE_VIEWER_PICK_PLACEMENT, or the tab action would silently open a split.
     let popup = |placement: &str| {
         format!(
-            "plugin\npane\nopen\n--plugin\nherdr-file-viewer\n--entrypoint\nroot-picker\n\
+            "plugin\npane\nopen\n--plugin\nherdr-file-editor\n--entrypoint\nroot-picker\n\
              --placement\npopup\n--env\nHERDR_FILE_VIEWER_PICK_PLACEMENT={placement}\n"
         )
     };

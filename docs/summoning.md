@@ -44,7 +44,7 @@ directly, so no detached shell or hard-coded path is involved:
 [[keys.command]]
 key = "prefix+f"   # any herdr key syntax, e.g. ctrl+b then f
 type = "plugin_action"
-command = "herdr-file-viewer.open-file-viewer"
+command = "herdr-file-editor.open-file-viewer"
 description = "open file viewer in split"
 ```
 
@@ -94,7 +94,7 @@ Bind it to its own key, e.g. `prefix+shift+f` alongside `prefix+f` for the split
 [[keys.command]]
 key = "prefix+shift+f"
 type = "plugin_action"
-command = "herdr-file-viewer.open-file-viewer-tab"
+command = "herdr-file-editor.open-file-viewer-tab"
 description = "open file viewer in tab"
 ```
 
@@ -132,13 +132,13 @@ shows an error in the popup, so you can fix it or cancel.
 [[keys.command]]
 key = "prefix+d"
 type = "plugin_action"
-command = "herdr-file-viewer.open-file-viewer-at"
+command = "herdr-file-editor.open-file-viewer-at"
 description = "open file viewer at… (split)"
 
 [[keys.command]]
 key = "prefix+alt+d"
 type = "plugin_action"
-command = "herdr-file-viewer.open-file-viewer-at-tab"
+command = "herdr-file-editor.open-file-viewer-at-tab"
 description = "open file viewer at… (tab)"
 ```
 

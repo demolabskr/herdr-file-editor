@@ -461,6 +461,7 @@ fn re_root_rebuilds_at_the_new_root_carrying_prefs_and_resetting_nav() {
     ctrl.set_preview_viewports(herdr_file_viewer::presenter::PreviewViewports {
         active: (8, 4),
         pinned: Some((8, 4)),
+        ..Default::default()
     });
     ctrl.handle(Intent::ToggleFocus);
     assert_eq!(ctrl.focus(), Focus::Content);
