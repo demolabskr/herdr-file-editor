@@ -1,6 +1,5 @@
 //! In-file navigation bottom prompt — go-to-line (`:`) and incremental search (`/`, `n`/`N`):
-//! open, key handling, match navigation, and the source-line jump. Part of the Session Controller
-//! (split out of `controller/mod.rs`, M6).
+//! open, key handling, match navigation, and the source-line jump. Part of the Session Controller.
 
 use super::*;
 
@@ -267,8 +266,9 @@ impl Controller {
                 Effects::redraw()
             }
             // Commit — retain the SearchState; Esc-cancel is the path that clears it.
-            // Close the prompt but leave self.search intact so n/N can navigate the committed
-            // matches (AC-14). The query, matches, and current index persist.
+            // Close the prompt but leave the target preview's `search` intact (the active
+            // interaction's or the pinned snapshot's) so n/N can navigate the committed matches
+            // (AC-14). The query, matches, and current index persist.
             // Exception: an empty query commits nothing — clear search so no phantom
             // "Search: (no matches)" state persists after the prompt closes.
             KeyCode::Enter => {
@@ -353,8 +353,9 @@ impl Controller {
     }
 
     /// Incremental search core: read the current prompt query, run `find_matches` over the
-    /// displayed content's plain-text lines, store the result in `self.search`, and scroll
-    /// the first match into view (AC-9, AC-10, AC-18).
+    /// displayed content's plain-text lines, store the result in the target preview's `search`
+    /// (the active interaction's or the pinned snapshot's), and scroll the first match into view
+    /// (AC-9, AC-10, AC-18).
     pub(super) fn refresh_search(&mut self) {
         let q = self
             .modal
